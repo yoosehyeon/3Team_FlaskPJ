@@ -1,13 +1,19 @@
 import { useState } from 'react';
-// 🚨 주의: SafeMap과 GapDashboard 파일이 있는 경로에 맞게 아래 import 경로를 수정해 주세요!
 import SafeMap from './components/B-map/SafeMap';
 import GapDashboard from './components/F1-dashboard/GapDashboard';
+import ReportModal from './components/F-sse/ReportModal';
+import { useSSE } from './hooks/useSSE';
 
 export default function App() {
-  // 현재 어떤 화면을 보여줄지 결정하는 상태 ('home' 또는 'map')
   const [currentView, setCurrentView] = useState('home');
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+
+  // SSE 전역 연결 — 앱 시작 즉시 실시간 위험 마커 수신 시작
+  useSSE();
 
   return (
+    <>
     <div className="min-h-screen bg-bg-light text-text-primary p-8 flex flex-col items-center justify-center space-y-4">
       {/* 제목 클릭 시 언제든 메인 홈으로 돌아오도록 설정 */}
       <h1
@@ -29,9 +35,18 @@ export default function App() {
             >
               안전 경로
             </button>
-            <div className="w-24 h-24 rounded-base bg-danger-red flex items-center justify-center text-white shadow-card transition-all duration-fast hover:scale-105">
+            <button
+              onClick={() => {
+                navigator.geolocation?.getCurrentPosition(
+                  (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                  () => setUserLocation({ lat: 37.2659, lng: 127.0000 })
+                );
+                setIsReportOpen(true);
+              }}
+              className="w-24 h-24 rounded-base bg-danger-red flex items-center justify-center text-white shadow-card transition-all duration-fast hover:scale-105 cursor-pointer"
+            >
               위험 신고
-            </div>
+            </button>
             <div className="w-24 h-24 rounded-base bg-warning-yellow flex items-center justify-center text-white shadow-card transition-all duration-fast hover:scale-105">
               수리 중
             </div>
@@ -56,5 +71,13 @@ export default function App() {
         </div>
       )}
     </div>
+
+    {/* F5 위험 신고 모달 — 전역 렌더링 */}
+    <ReportModal
+      isOpen={isReportOpen}
+      onClose={() => setIsReportOpen(false)}
+      userLocation={userLocation}
+    />
+    </>
   )
 }

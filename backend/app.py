@@ -43,6 +43,11 @@ def create_app():
     except Exception as e:
         logger.error("db_init_err", error=str(e), msg="DB 연결에 실패하였습니다.")
 
+    # 5. [팀원 F: 김성익 PL] SSE 블루프린트 등록 (F5 실시간 위험 신고 엔진)
+    from backend.app.routes.sse import sse_bp
+    app.register_blueprint(sse_bp)
+    logger.info("sse_init", message="F5 SSE 실시간 위험 신고 엔진이 등록되었습니다.")
+
     # 4. Health Check 라우트 (클라우드타입 배포 및 CI 파이프라인 무중단 상태 점검용)
     @app.route('/health', methods=['GET'])
     def health_check():

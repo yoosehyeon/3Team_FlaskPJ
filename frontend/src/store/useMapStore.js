@@ -31,6 +31,23 @@ export const useMapStore = create((set) => ({
   // 로딩 & 에러
   isLoading: false,
   error: null,
-  setIsLoading: (bool) => set({ isLoading: bool }),  // ✅ 수정: setLoading → setIsLoading
-  setError: (err) => set({ error: err }),            // ✅ 추가
+  setIsLoading: (bool) => set({ isLoading: bool }),
+  setError: (err) => set({ error: err }),
+
+  // 🚨 [F5 김성익] 실시간 위험 마커
+  dangerMarkers: [],
+  addDangerMarker: (marker) =>
+    set((state) => {
+      // 30분 이상 된 마커 자동 소멸
+      const thirtyMinutesAgo = Date.now() - 30 * 60 * 1000;
+      const fresh = state.dangerMarkers.filter(
+        (m) => new Date(m.created_at).getTime() > thirtyMinutesAgo
+      );
+      return { dangerMarkers: [...fresh, { ...marker, _addedAt: Date.now() }] };
+    }),
+  removeDangerMarker: (id) =>
+    set((state) => ({
+      dangerMarkers: state.dangerMarkers.filter((m) => m.id !== id),
+    })),
+  clearDangerMarkers: () => set({ dangerMarkers: [] }),
 }));
