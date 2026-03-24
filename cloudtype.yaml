@@ -1,0 +1,28 @@
+name: modugil
+description: 수원시 중심의 휠체어 통합 내비게이션 어플리케이션
+services:
+  # 1. 벡엔드 (Flask, Gunicorn 실행)
+  - name: flask-backend
+    type: PYTHON
+    env:
+      - name: DATABASE_URL
+        value: ${DATABASE_URL}  # Cloudtype 대시보드에서 환경변수로 주입될 URL
+      - name: VITE_SUPABASE_URL
+        value: ${VITE_SUPABASE_URL}
+      - name: VITE_SUPABASE_ANON_KEY
+        value: ${VITE_SUPABASE_ANON_KEY}
+    build:
+      command: pip install -r backend/requirements.txt
+    start:
+      # Gunicorn을 구동하며 설정파일을 읽어들입니다 (비동기 스레드 대응)
+      command: gunicorn --config backend/gunicorn.conf.py backend.app:app
+    ports:
+      - 5000:5000
+    context: . # 최상위 레벨에서 컨텍스트 공유
+
+  # 2. 프론트엔드 (React, 클라우드타입 정적 배포)
+  - name: react-frontend
+    type: STATIC
+    build:
+      command: cd frontend && npm ci && npm run build
+    publish: frontend/dist

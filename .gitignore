@@ -1,0 +1,21 @@
+# Python & Backend
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node & Frontend
+node_modules/
+dist/
+
+# Env & Supabase
+.env
+.supabase/
+
+# OS / Tooling
+.DS_Store
+.idea/
+.vscode/
+
+# GitHub Actions 
+# (deploy.yml은 포함되어야 하므로 예외 처리 없이 둠)
