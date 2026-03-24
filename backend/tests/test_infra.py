@@ -8,4 +8,3 @@ def test_infra_base_check():
     이 테스트는 항상 성공하며, CI/CD 배포 엔진을 안심시킵니다.
     """
     assert True
-    
