@@ -6,11 +6,11 @@ services:
     type: PYTHON
     env:
       - name: DATABASE_URL
-        value: ${DATABASE_URL}  # Cloudtype 대시보드에서 환경변수로 주입될 URL
+        value: ${postgresql://postgres:[YOUR-PASSWORD]@db.jchmthhtnpzlpjpptefn.supabase.co:5432/postgres}  # Cloudtype 대시보드에서 환경변수로 주입될 URL
       - name: VITE_SUPABASE_URL
-        value: ${VITE_SUPABASE_URL}
+        value: ${https://jchmthhtnpzlpjpptefn.supabase.co}
       - name: VITE_SUPABASE_ANON_KEY
-        value: ${VITE_SUPABASE_ANON_KEY}
+        value: ${eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjaG10aGh0bnB6bHBqcHB0ZWZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTMzMjIsImV4cCI6MjA4OTg2OTMyMn0.Z8QZC_ctNMDcangUyyf5ypl_gLVH_y189FcVR4OqJcc}
     build:
       command: pip install -r backend/requirements.txt
     start:
