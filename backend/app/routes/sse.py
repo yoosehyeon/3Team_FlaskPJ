@@ -3,7 +3,7 @@ import queue
 import threading
 from flask import Blueprint, Response, request, stream_with_context
 from backend.database import SessionLocal
-from backend.models import Barrier, Report
+from backend.models import Barrier
 
 sse_bp = Blueprint("sse", __name__)
 
@@ -35,7 +35,8 @@ def sse_stream():
     def generate():
         try:
             # 연결 즉시 현재 접속자 수 전송
-            yield f"data: {json.dumps({'type': 'connected', 'clients': len(_clients)})}\n\n"
+            yield f"data: {json.dumps(
+                {'type': 'connected', 'clients': len(_clients)})}\n\n"
             while True:
                 try:
                     data = q.get(timeout=25)
