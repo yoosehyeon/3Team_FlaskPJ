@@ -42,3 +42,4 @@ def register_error_handlers(app):
             )
 
         return jsonify(response), status_code
+    

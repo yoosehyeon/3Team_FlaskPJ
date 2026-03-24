@@ -18,7 +18,7 @@ def configure_logging():
             structlog.stdlib.add_logger_name,            # 모듈 이름 추가
             structlog.stdlib.add_log_level,              # 에러 레벨 명시
             structlog.stdlib.PositionalArgumentsFormatter(),
-            structlog.processors.TimeStamper(fmt="iso"), # 발생 시점 (ISO 8601)
+            structlog.processors.TimeStamper(fmt="iso"),  # 발생 시점 (ISO 8601)
             structlog.processors.StackInfoRenderer(),    # 스택 트레이스
             structlog.processors.format_exc_info,        # 예외 정보 포맷팅
             structlog.processors.JSONRenderer()          # JSON 기록
