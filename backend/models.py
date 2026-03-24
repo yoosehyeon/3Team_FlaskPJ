@@ -1,4 +1,4 @@
-from backend.database import Base
+#from backend.database import Base
 
 # ==========================================================
 # 🚀 백엔드 팀원 (권우영, 이동규, 변호준 님) 협업 규칙

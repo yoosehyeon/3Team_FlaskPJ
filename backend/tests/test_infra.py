@@ -1,9 +1,6 @@
-import os
-
-# ✨ 팀원 A: 유세현 PM 보완 - Backend CI의 'Pytest' 오류(테스트 파일 부재)를 해결하기 위한 파일입니다.
-# 
+# ✨ 팀원 A: 유세현 PM 보완 - Backend CI의 'Pytest' 오류를 해결하기 위한 파일입니다.
 # GitHub Actions 파이프라인의 백엔드 단계(CI)는 테스트 코드가 최소 1개 이상 존재해야 '통과' 처리됩니다.
-# 이 파일을 통해 인프라 배포 신호등을 '초록색'으로 바꾸고, 배포를 승인시킵니다.
+
 
 def test_infra_base_check():
     """
