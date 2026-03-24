@@ -17,7 +17,7 @@ services:
       # Gunicorn을 구동하며 설정파일을 읽어들입니다 (비동기 스레드 대응)
       command: gunicorn --config backend/gunicorn.conf.py backend.app:app
     ports:
-      - 5000:5000
+      - 5000
     context: . # 최상위 레벨에서 컨텍스트 공유
 
   # 2. 프론트엔드 (React, 클라우드타입 정적 배포)
