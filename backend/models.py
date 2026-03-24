@@ -1,5 +1,5 @@
 from sqlalchemy import (
-Column, Integer, Text, Float, Boolean, DateTime, ForeignKey)
+    Column, Integer, Text, Float, Boolean, DateTime, ForeignKey)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from backend.database import Base

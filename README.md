@@ -1,59 +1,177 @@
-# 모두의 길 (Modu-Gil) 휠체어 통합 내비게이션
+# Supabase CLI
 
-본 저장소는 **모두의 길(Modu-Gil)** 프로젝트를 위한 통합 레포지토리입니다. (React 18 + Flask 3.0)
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=develop)](https://coveralls.io/github/supabase/cli?branch=develop) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-## 📌 1. 필수 개발 환경 세팅 (Day 1)
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
-### 🚀 A. Supabase Local CLI 세팅 (로컬 DB 인프라)
-모든 팀원은 로컬 DB 레이어 통일을 위해 별도의 외부 DB가 아닌 Supabase Local을 사용합니다.
-1. 팀원 PC의 Node.js 설치 확인 (`node -v`) 및 Docker Desktop 실행
-2. 터미널에서 `npm install -g supabase` 실행
-3. 프로젝트 최상위 폴더에서 `supabase init` 실행
-4. `supabase start` 실행 (로컬 컨테이너 실행됨)
-5. 완료 후 터미널에 출력되는 **DATABASE_URL**, **API URL**, **anon key**를 복사합니다.
+This repository contains all the functionality for Supabase CLI.
 
-### 🚀 B. 백엔드(Flask) 환경 구성
-1. 파이썬 가상환경 생성 및 활성화
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
+
+## Getting started
+
+### Install the CLI
+
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
+
 ```bash
-python -m venv venv
-# Windows:
-venv\Scripts\activate
-# Mac/Linux:
-source venv/bin/activate
+npm i supabase --save-dev
 ```
-2. 패키지 설치
-```bash
-pip install -r backend/requirements.txt
-```
-3. 환경변수 설정
-- `backend/.env.example` 파일을 복사하여 `backend/.env`를 만듭니다. (절대 커밋 금지)
-- `supabase start` 결과값을 `.env` 안에 맞춰 넣습니다. (`postgresql://postgres:postgres@127.0.0.1:54322/postgres`)
-4. 앱 실행
-```bash
-python backend/app.py
-```
-> 포트 5000번에서 실행되며 DB 테이블이 최초 1회 자동 생성됩니다.
 
-### 🚀 C. 프론트엔드(React) 환경 구성
-1. 패키지 모듈 설치
-```bash
-cd frontend
-npm install
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
+
 ```
-2. 개발 서버 실행
-```bash
-npm run dev
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
 ```
-> 팀원 A(PM 유세현)의 프록시 설정에 의해 프론트에서 `/api/...`로 보내는 데이터는 자동으로 백엔드(5000번)로 연동됩니다.
 
----
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
 
-### 📞 6인 협업 컨벤션 및 담당
-- 유세현(PM): 인프라 아키텍처 & 공통 모듈 (DevOps)
-- 이승연: 공간 데이터 알고리즘 (Map Engine)
-- 권우영: 실시간 상태 추적기 (Elevator)
-- 이동규: 대중교통 데이터 엔지니어 (Public Transport)
-- 변호준: 배리어프리 컨텐츠 매니저 (Barrier-free Content)
-- 김성익(PL): 실시간 인터랙션 엔진 (Real-time Web)
+<details>
+  <summary><b>macOS</b></summary>
 
-*충돌 방지를 위해 반드시 매일 `feature/역할-기능` 브랜치를 따서 작업하시기 바랍니다.*
+  Available via [Homebrew](https://brew.sh). To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Windows</b></summary>
+
+  Available via [Scoop](https://scoop.sh). To install:
+
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
+
+  To upgrade:
+
+  ```powershell
+  scoop update supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Linux</b></summary>
+
+  Available via [Homebrew](https://brew.sh) and Linux packages.
+
+  #### via Homebrew
+
+  To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+
+  #### via Linux packages
+
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
+
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
+
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
+
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
+
+<details>
+  <summary><b>Other Platforms</b></summary>
+
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
+
+  Add a symlink to the binary in `$PATH` for easier access:
+
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
+
+  This works on other non-standard Linux distros.
+</details>
+
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
+
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
+
+```bash
+supabase bootstrap
+```
+
+Or using npx:
+
+```bash
+npx supabase bootstrap
+```
+
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
+
+## Docs
+
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
+
+## Breaking changes
+
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
+
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+
+## Developing
+
+To run from source:
+
+```sh
+# Go >= 1.22
+go run . help
+```

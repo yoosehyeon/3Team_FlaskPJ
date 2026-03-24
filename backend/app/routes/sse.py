@@ -35,8 +35,8 @@ def sse_stream():
     def generate():
         try:
             # 연결 즉시 현재 접속자 수 전송
-            yield f"data: {json.dumps(
-                {'type': 'connected', 'clients': len(_clients)})}\n\n"
+            msg = {'type': 'connected', 'clients': len(_clients)}
+            yield f"data: {json.dumps(msg)}\n\n"
             while True:
                 try:
                     data = q.get(timeout=25)

@@ -19,3 +19,4 @@ dist/
 
 # GitHub Actions 
 # (deploy.yml은 포함되어야 하므로 예외 처리 없이 둠)
+.env
