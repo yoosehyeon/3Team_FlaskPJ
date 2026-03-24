@@ -4,8 +4,10 @@ import { Map, MapMarker } from 'react-kakao-maps-sdk';
 import { useMapStore } from '../../store/useMapStore';
 import RoutePolyline from './RoutePolyline';
 import MapControls from './MapControls';
+import { useSafeRoute } from '../../hooks/useSafeRoute';
 
 export default function SafeMap() {
+  useSafeRoute();
   const { searchStart, searchEnd, safePolylineCoords, isLoading, error } = useMapStore();
   const [map, setMap] = useState(null); // 지도 객체 상태 저장
 
