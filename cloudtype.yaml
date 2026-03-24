@@ -6,7 +6,7 @@ services:
     type: PYTHON
     env:
       - name: DATABASE_URL
-        value: ${postgresql://postgres:[YOUR-PASSWORD]@db.jchmthhtnpzlpjpptefn.supabase.co:5432/postgres}  # Cloudtype 대시보드에서 환경변수로 주입될 URL
+        value: ${postgresql://postgres:guskk0217!@@db.jchmthhtnpzlpjpptefn.supabase.co:5432/postgres}  # Cloudtype 대시보드에서 환경변수로 주입될 URL
       - name: VITE_SUPABASE_URL
         value: ${https://jchmthhtnpzlpjpptefn.supabase.co}
       - name: VITE_SUPABASE_ANON_KEY
