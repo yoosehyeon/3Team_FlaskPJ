@@ -7,9 +7,10 @@ from flask_apscheduler import APScheduler
 # [팀원 A: 유세현 PM 보완] 실행 환경에 관계없이 패키지를 인식하도록 경로 주입
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.logger import configure_logging            # noqa: E402
+# noqa: E402는 import 위치가 맨 위가 아닐 때 발생하는 경고를 무시합니다.
+from backend.logger import configure_logging             # noqa: E402
 from backend.errors import register_error_handlers       # noqa: E402
-from backend.database import engine, Base               # noqa: E402
+from backend.database import engine, Base                # noqa: E402
 
 # .env 환경 변수 로드
 load_dotenv()
@@ -23,11 +24,11 @@ def create_app():
     app = Flask(__name__)
 
     # 1. [팀원 A 보완] F3 실시간 시설 상태 추적 알림을 위한 스케줄러 초기화
-    # 이 설정이 활성화되어 있어야 팀원 C(권우영) 님이 API 폴링 기능을 즉시 작업할 수 있습니다.
+    # 이 설정이 활성화되어 있어야 팀원 C(권우영) 님이 API 폴링 기능을 작업할 수 있습니다.
     scheduler = APScheduler()
     scheduler.init_app(app)
     scheduler.start()
-    logger.info("scheduler_init", message="F3 추적용 스케줄러가 엔진에 장착되었습니다.")
+    logger.info("scheduler_init", message="F3 추적용 스케줄러가 장착되었습니다.")
 
     # 2. 전역 에러 핸들러 플러그인 연동 (팀원 모두에게 일관된 에러 포맷 제공)
     register_error_handlers(app)
@@ -46,7 +47,10 @@ def create_app():
     @app.route('/health', methods=['GET'])
     def health_check():
         logger.info("health_check_called", status="healthy")
-        return {"status": "healthy", "message": "API Server is running ok."}, 200
+        return (
+            {"status": "healthy", "message": "API Server is running ok."},
+            200
+        )
 
     return app
 
