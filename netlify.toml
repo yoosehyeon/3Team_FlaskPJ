@@ -1,0 +1,9 @@
+# netlify.toml (프로젝트 루트)
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,13 +1,19 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <!-- 카카오맵 SDK (실제 VITE_KAKAO_APP_KEY는 빌드 시 또는 동적으로 주입) -->
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=%VITE_KAKAO_APP_KEY%&libraries=clusterer"></script>
+    <title>수원시 휠체어 통합 내비게이션</title>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- VITE_ 환경변수 치환용 간단한 스크립트 처리 -->
+    <script>
+      // 카카오 맵 SDK URL의 %VITE_KAKAO_APP_KEY% 치환은 Vite.js의 index.html 치환 기능을 이용하거나 직접 주입해야 합니다.
+    </script>
   </body>
 </html>
