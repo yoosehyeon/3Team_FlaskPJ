@@ -1,8 +1,12 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from backend.app.routes.reports import reports_bp  # noqa: E402
 
 app = Flask(__name__)
-CORS(app) # 프론트엔드(React)의 접근을 허용합니다.
+CORS(app)  # 프론트엔드(React)의 접근을 허용합니다.
+
+# F5 실시간 위험 신고 엔진 (PRD v3.0 / 김성익 PL)
+app.register_blueprint(reports_bp)
 
 # app.py 코드 윗부분에 추가
 @app.route('/')
