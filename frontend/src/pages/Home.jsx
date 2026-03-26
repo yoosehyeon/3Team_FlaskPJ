@@ -100,7 +100,7 @@ const features = [
   { icon: <MapPin className="text-blue-500" />, title: "안전 경로", description: "계단과 급경사를 피한 휠체어 최적화 경로를 안내합니다.", link: "지도 이동", status: "active" },
   { icon: <AlertCircle className="text-red-500" />, title: "위험 신고", description: "도로 파손이나 엘리베이터 고장을 실시간으로 공유합니다.", link: "지금 신고", status: "active", isReport: true },
   { icon: <Wrench className="text-gray-400" />, title: "수리점 찾기", description: "가까운 휠체어 급속 충전소 및 수리점 정보를 제공합니다.", link: "준비 중", status: "pending" },
-  { icon: <ShieldCheck className="text-gray-400" />, title: "배리어프리", description: "휠체어 접근이 가능한 식당과 카페 정보를 확인하세요.", link: "준비 중", status: "pending" }
+  { icon: <ShieldCheck className="text-blue-500" />, title: "배리어프리", description: "휠체어 접근이 가능한 편의 시설과 장소를 지도에서 바로 확인하세요.", link: "지도 이동", status: "active" }
 ];
 
 function FeatureSection() {
