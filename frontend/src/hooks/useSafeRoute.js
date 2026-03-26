@@ -1,86 +1,52 @@
-// src/hooks/useSafeRoute.js
-import { useEffect } from 'react';
-import { useMapStore } from '../store/useMapStore';  // ✅ 이 줄 추가!
+import { useMutation } from '@tanstack/react-query';
+// 수정: 우리가 맞춘 스토어 이름인 useUIStore로 가져옵니다.
+import useUIStore from '../store/useUIStore';
 
-// 1️⃣ T-map API 호출 함수
-export const fetchTmapRoute = async ({ start, end }) => {
-  if (!start || !end) return null;
-
-  const TMAP_API_KEY = import.meta.env.VITE_TMAP_API_KEY;
-  const url = `https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json`;
-
-  const body = {
-    startX: start.lng,
-    startY: start.lat,
-    endX: end.lng,
-    endY: end.lat,
-    reqCoordType: 'WGS84GEO',
-    resCoordType: 'WGS84GEO',
-    startName: 'start',
-    endName: 'end',
-  };
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'appKey': TMAP_API_KEY,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) throw new Error(`Tmap API error: ${response.status}`);
-  return response.json();
-};
-
-// 2️⃣ useSafeRoute 훅
 export const useSafeRoute = () => {
-  const {
-    searchStart,
-    searchEnd,
-    setSafePolylineCoords,
-    setError,
-    setIsLoading
-  } = useMapStore();
+  // 창고에서 데이터를 저장하는 함수를 가져옵니다.
+  const setRouteInfo = useUIStore((state) => state.setRouteInfo);
+  const setMapCenter = useUIStore((state) => state.setMapCenter);
 
-  useEffect(() => {
-    const getRoute = async () => {
-      console.log('🟢 useSafeRoute 시작', { searchStart, searchEnd });
+  // useMutation은 '데이터를 생성/검색'하는 요청에 최적화되어 있습니다.
+  return useMutation({
+    // 1. 실제 백엔드와 통신하는 함수
+    mutationFn: async ({ start, end }) => {
+      // 수정: 비교 기능이 빠졌으므로 일반 경로 API로 요청을 보냅니다.
+      const response = await fetch('/api/route', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          start_place: start,
+          end_place: end,
+        }),
+      });
 
-      if (!searchStart || !searchEnd) {
-        console.log('⚠️ 출발지/도착지 없음');
-        return;
+      if (!response.ok) {
+        throw new Error('경로를 불러오는 데 실패했습니다.');
       }
 
-      setIsLoading(true);
-      setError(null);
+      return response.json();
+    },
 
-      try {
-        console.log('🔵 T-map API 호출 중...');
-        const data = await fetchTmapRoute({ start: searchStart, end: searchEnd });
-        console.log('🟡 전체 API 응답:', data);
+    // 2. 통신 성공 시 실행될 로직
+    onSuccess: (data) => {
+      // 백엔드에서 준 데이터(data.path 등)를 창고에 저장
+      setRouteInfo(data);
 
-        if (data.features && data.features.length > 0) {
-          const geometry = data.features[0].geometry;
-          let coords = [];
-
-          if (geometry.type === 'LineString') {
-            coords = geometry.coordinates.map(([lng, lat]) => [lat, lng]);
-          } else if (geometry.type === 'MultiLineString') {
-            coords = geometry.coordinates.flat().map(([lng, lat]) => [lat, lng]);
-          }
-
-          console.log('🟠 추출된 좌표:', coords);
-          setSafePolylineCoords(coords);
-        }
-      } catch (err) {
-        console.error('🔴 에러 발생:', err);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
+      // 검색 결과의 첫 번째 지점으로 지도의 중심을 이동시킵니다.
+      if (data.path && data.path.length > 0) {
+        setMapCenter(data.path[0]);
       }
-    };
 
-    getRoute();
-  }, [searchStart, searchEnd, setSafePolylineCoords, setError, setIsLoading]);
+      console.log("경로 탐색 성공:", data);
+    },
+
+    // 3. 통신 실패 시 실행될 로직
+    onError: (error) => {
+      console.error("경로 탐색 에러:", error.message);
+      alert("경로를 찾을 수 없습니다. 주소를 다시 확인해주세요.");
+    },
+  });
 };

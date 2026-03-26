@@ -1,52 +1,111 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+:root {
+  --text: #6b6375;
+  --text-h: #08060d;
+  --bg: #fff;
+  --border: #e5e4e7;
+  --code-bg: #f4f3ec;
+  --accent: #aa3bff;
+  --accent-bg: rgba(170, 59, 255, 0.1);
+  --accent-border: rgba(170, 59, 255, 0.5);
+  --social-bg: rgba(244, 243, 236, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-@layer base {
-  :root {
-    /* ✨ 팀원 A: 프론트엔드 공통 CSS 변수 12개 정의 (디자인 시스템) ✨ */
-    /* 목적: 재사용성을 높이고 색약 등 다양한 비장애인/장애인 환경에 맞춘 접근성 높은 고대비 색상 구성 */
-    
-    /* 1. Primary Colors - 주요 브랜드 아이덴티티 및 강력한 인지 필요 객체 */
-    --color-primary-main: #2563EB; /* 메인 블루 (수원역 중심 등) */
-    --color-primary-light: #60A5FA; /* 컴포넌트 호버 색상 */
-    --color-primary-dark: #1E3A8A; /* 컴포넌트 클릭 상태 */
-    
-    /* 2. Feedback Colors - 상태 변경/오류를 명확하게 표시 (F3, F5 모듈 용) */
-    --color-safety-cyan: #06B6D4;     /* 안전 경로 Polyline 및 강조 레이어 (Cyan) */
-    --color-danger-red: #EF4444;      /* 위험 신고 마커(Warning), 엘리베이터 고장 색상 */
-    --color-success-green: #10B981;   /* 배리어프리 정상 및 통과 가능 구역 알림 */
-    --color-warning-yellow: #F59E0B;  /* 주의 구간 및 엘리베이터 수리 중(REPAIRING) */
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
 
-    /* 3. Neutral Colors - 배경 및 텍스트 가독성 최적화 */
-    --color-bg-light: #F9FAFB;        /* 메인 백그라운드 */
-    --color-text-primary: #111827;    /* 명도 대비가 확실한 텍스트 1 */
-    --color-text-secondary: #4B5563;  /* 명도 대비가 확실한 텍스트 2 */
-
-    /* 4. Spacing, Radius, Shadow - 일관된 UI */
-    --radius-base: 0.5rem;            /* 컴포넌트 둥글기 (UI 접근성 안정화) */
-    --transition-fast: 0.2s ease-out; /* Framer Motion 대응 속도 토큰 */
-    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  }
-}
-
-/* 글로벌 기본 타이포 다듬기 및 구조 설정 */
-body {
-  background-color: var(--color-bg-light);
-  color: var(--color-text-primary);
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  margin: 0;
-  padding: 0;
+  font: 18px/145% var(--sans);
+  letter-spacing: 0.18px;
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
 }
 
-/* 화면 전환 부드럽게 (접근성: 과도한 애니메이션 방지도 여기서 처리 가능) */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #9ca3af;
+    --text-h: #f3f4f6;
+    --bg: #16171d;
+    --border: #2e303a;
+    --code-bg: #1f2028;
+    --accent: #c084fc;
+    --accent-bg: rgba(192, 132, 252, 0.15);
+    --accent-border: rgba(192, 132, 252, 0.5);
+    --social-bg: rgba(47, 48, 58, 0.5);
+    --shadow:
+      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
   }
+
+  #social .button-icon {
+    filter: invert(1) brightness(2);
+  }
+}
+
+#root {
+  width: 1126px;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  border-inline: 1px solid var(--border);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+h1 {
+  font-size: 56px;
+  letter-spacing: -1.68px;
+  margin: 32px 0;
+  @media (max-width: 1024px) {
+    font-size: 36px;
+    margin: 20px 0;
+  }
+}
+h2 {
+  font-size: 24px;
+  line-height: 118%;
+  letter-spacing: -0.24px;
+  margin: 0 0 8px;
+  @media (max-width: 1024px) {
+    font-size: 20px;
+  }
+}
+p {
+  margin: 0;
+}
+
+code,
+.counter {
+  font-family: var(--mono);
+  display: inline-flex;
+  border-radius: 4px;
+  color: var(--text-h);
+}
+
+code {
+  font-size: 15px;
+  line-height: 135%;
+  padding: 4px 8px;
+  background: var(--code-bg);
 }

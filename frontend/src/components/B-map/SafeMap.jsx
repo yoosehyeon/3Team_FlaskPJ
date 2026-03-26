@@ -1,52 +1,70 @@
-// SafeMap.js 수정안 (Bounds 적용)
-import { useState, useEffect, useMemo } from 'react';
-import { Map, MapMarker } from 'react-kakao-maps-sdk';
-import { useMapStore } from '../../store/useMapStore';
-import RoutePolyline from './RoutePolyline';
-import MapControls from './MapControls';
-import { useSafeRoute } from '../../hooks/useSafeRoute';
+import React, { useEffect } from 'react';
+import { MapContainer, TileLayer, useMap, Polyline } from 'react-leaflet';
+import L from 'leaflet'; // Leaflet 직접 참조 추가
+import 'leaflet/dist/leaflet.css';
+import useUIStore from '../../store/useUIStore';
 
-export default function SafeMap() {
-  useSafeRoute();
-  const { searchStart, searchEnd, safePolylineCoords, isLoading, error } = useMapStore();
-  const [map, setMap] = useState(null); // 지도 객체 상태 저장
+// --- Leaflet 기본 아이콘 경로 설정 (아이콘 깨짐 방지) ---
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
-  // 경로 좌표가 변경될 때마다 화면 영역(Bounds) 재계산
-  const bounds = useMemo(() => {
-    if (!safePolylineCoords || safePolylineCoords.length === 0) return null;
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
 
-    const bounds = new window.kakao.maps.LatLngBounds();
-    safePolylineCoords.forEach(([lat, lng]) => {
-      bounds.extend(new window.kakao.maps.LatLng(lat, lng));
-    });
-    return bounds;
-  }, [safePolylineCoords]);
-
-  // 계산된 영역으로 지도 시점 이동
+/**
+ * 지도의 중심 좌표나 줌 레벨이 바뀔 때 실제 지도를 움직여주는 헬퍼 컴포넌트
+ */
+function MapController({ center, zoom }) {
+  const map = useMap();
   useEffect(() => {
-    if (map && bounds) {
-      map.setBounds(bounds);
+    if (center) {
+      map.setView(center, zoom);
     }
-  }, [map, bounds]);
+  }, [center, zoom, map]);
+  return null;
+}
 
-  if (isLoading) return <div className="p-6 text-center">경로 계산 중...</div>;
-  if (error) return <div className="p-6 text-red-600">오류: {error}</div>;
-
-  const center = searchStart || { lat: 37.265, lng: 127.002 };
+/**
+ * SafeMap 컴포넌트
+ * 기본 내보내기(default export)가 정확히 명시되어 있습니다.
+ */
+const SafeMap = () => {
+  // 상태 창고(useUIStore)에서 데이터 가져오기
+  const mapCenter = useUIStore((state) => state.mapCenter);
+  const routeInfo = useUIStore((state) => state.routeInfo);
+  const defaultZoom = 15;
 
   return (
-    <div className="w-full h-96 rounded-lg overflow-hidden border border-gray-200">
-      <Map
-        center={center}
-        level={5}
-        className="w-full h-full"
-        onCreate={setMap} // 생성된 지도 객체를 상태에 저장
+    <div className="w-full h-full relative">
+      <MapContainer
+        center={mapCenter}
+        zoom={defaultZoom}
+        className="w-full h-full z-0"
+        scrollWheelZoom={true}
       >
-        {searchStart && <MapMarker position={searchStart} title="출발지" />}
-        {searchEnd && <MapMarker position={searchEnd} title="도착지" />}
-        {safePolylineCoords && <RoutePolyline coords={safePolylineCoords} />}
-        <MapControls />
-      </Map>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+
+        {/* 중심 좌표가 바뀌면 지도를 이동시킵니다 */}
+        <MapController center={mapCenter} zoom={defaultZoom} />
+
+        {/* 경로 데이터(routeInfo.path)가 존재할 때만 지도 위에 파란색 선을 그립니다 */}
+        {routeInfo && routeInfo.path && routeInfo.path.length > 0 && (
+          <Polyline
+            positions={routeInfo.path}
+            pathOptions={{ color: '#3b82f6', weight: 6, opacity: 0.8 }}
+          />
+        )}
+      </MapContainer>
     </div>
   );
-}
+};
+
+export default SafeMap; // 명시적 기본 내보내기
