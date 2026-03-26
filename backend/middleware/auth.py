@@ -7,12 +7,16 @@ from supabase import create_client, Client
 supabase_url = os.getenv("SUPABASE_URL", "")
 supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
-# Only create the client if the keys are actually present.
-# Since this creates a global object, it might fail if SUPABASE_URL is empty in some environments.
+# Supabase 클라이언트 초기화 (보안 및 안정성 강화)
+supabase = None
 if supabase_url and supabase_key:
-    supabase: Client = create_client(supabase_url, supabase_key)
+    try:
+        supabase: Client = create_client(supabase_url, supabase_key)
+    except Exception as e:
+        print(f"[Auth] Supabase 초기화 실패 (네트워크/버전 충돌): {e}")
+        supabase = None
 else:
-    supabase = None
+    print("[Auth] Supabase URL 또는 Key가 누락되었습니다.")
 
 def require_auth(f):
     @wraps(f)

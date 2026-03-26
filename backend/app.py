@@ -14,21 +14,24 @@ log = structlog.get_logger()
 # 배포/로컬 도메인 분기
 def create_cors_origins() -> list[str]:
     flask_env = os.getenv("FLASK_ENV", "development")
+    vite_domain = os.getenv("VITE_DOMAIN", "").rstrip("/")
     
-    if flask_env == "production":
-        vite_domain = os.getenv("VITE_DOMAIN")
-        if not vite_domain:
-            raise EnvironmentError(
-                "FLASK_ENV=production 이지만 VITE_DOMAIN이 설정되지 않았습니다. "
-                "Cloudtype Secrets에 VITE_DOMAIN을 등록하세요."
-            )
-        return [vite_domain]
-    
-    return [
-        "http://localhost:5173", 
-        "http://localhost:3000", 
-        "http://127.0.0.1:5173"
+    origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000"
     ]
+    
+    if vite_domain:
+        # 슬래시 유무와 상관없이 허용 도메인 추가
+        origins.append(vite_domain)
+        origins.append(f"{vite_domain}/")
+    elif flask_env == "production":
+        # 운영 환경인데 도메인이 명시되지 않은 경우 로그 출력 후 임시 허용
+        log.warning("VITE_DOMAIN not set in production. Using permissive CORS.")
+        return ["*"]
+        
+    return origins
 
 # Netlify ↔ Cloudtype CORS 세팅 
 CORS(app, origins=create_cors_origins(), supports_credentials=True)
