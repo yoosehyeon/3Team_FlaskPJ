@@ -1,0 +1,30 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  # 데이터베이스 마이그레이션 (DB 구조부터 변경)
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+      - name: DB 마이그레이션 적용
+        run: supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+  # 백엔드 재배포 (DB 변경 완료 후 실시)
+  deploy-backend:
+    runs-on: ubuntu-latest
+    needs: migrate
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cloudtype API 재배포 트리거
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.CLOUDTYPE_API_TOKEN }}" \
+            https://api.cloudtype.io/v1/apps/${{ secrets.CLOUDTYPE_APP_ID }}/deploy
