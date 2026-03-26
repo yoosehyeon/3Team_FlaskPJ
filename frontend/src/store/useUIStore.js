@@ -30,11 +30,14 @@ const useUIStore = create((set) => ({
   setIsLoading: (bool) => set({ isLoading: bool }),
   setError: (err) => set({ error: err }),
 
-  // 🚨 [F5 김성익] 실시간 위험 마커
+  // ⚠️ [중복 주의 — F5 김성익]
+  // dangerMarkers 상태는 useMapStore.js 에 정식으로 관리됩니다.
+  // DangerMarker.jsx, useReportsRealtime.js 모두 useMapStore 를 직접 참조하므로
+  // 이 블록은 현재 사용되지 않습니다.
+  // 추후 B팀원과 협의 후 이 블록 전체를 제거할 것을 권장합니다.
   dangerMarkers: [],
   addDangerMarker: (marker) =>
     set((state) => {
-      // 30분 이상 된 마커 자동 소멸
       const thirtyMinutesAgo = Date.now() - 30 * 60 * 1000;
       const fresh = state.dangerMarkers.filter(
         (m) => new Date(m.created_at).getTime() > thirtyMinutesAgo

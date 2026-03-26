@@ -1,7 +1,9 @@
-import { useState, useRef } from 'react';
+﻿import { useState, useRef } from 'react';
 
+// 백엔드 API 기본 URL (환경변수 미설정 시 로컬 개발 서버 사용)
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+// 신고 가능한 위험 유형 목록 — PRD reports.type 컬럼 enum 값과 일치
 const BARRIER_TYPES = [
   { value: 'stairs', label: '계단' },
   { value: 'construction', label: '공사 중' },
@@ -10,23 +12,32 @@ const BARRIER_TYPES = [
 ];
 
 /**
- * ReportModal — 위험 신고 모달
+ * ReportModal — 위험 신고 모달 컴포넌트
+ *
  * Props:
- *   - isOpen: boolean
- *   - onClose: () => void
- *   - userLocation: { lat, lng } | null
+ *   - isOpen       : boolean      — 모달 표시 여부
+ *   - onClose      : () => void   — 모달 닫기 콜백
+ *   - userLocation : { lat, lng } — 현재 사용자 GPS 좌표
+ *
+ * 동작 흐름:
+ *   1) 사용자가 위험 유형·위험도·사진을 선택
+ *   2) POST /api/report (multipart/form-data) 호출
+ *   3) 백엔드에서 Supabase Storage 업로드 + reports 테이블 INSERT
+ *   4) Supabase Realtime이 INSERT를 감지 → 모든 접속자 지도에 마커 표시
  */
 export default function ReportModal({ isOpen, onClose, userLocation }) {
-  const [type, setType] = useState('stairs');
-  const [severity, setSeverity] = useState(3);
-  const [imageFile, setImageFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const fileRef = useRef(null);
+  const [type, setType] = useState('stairs');           // 선택된 위험 유형
+  const [severity, setSeverity] = useState(3);          // 위험도 (1~5)
+  const [imageFile, setImageFile] = useState(null);     // 첨부 이미지 파일 객체
+  const [preview, setPreview] = useState(null);         // 이미지 미리보기 URL
+  const [isSubmitting, setIsSubmitting] = useState(false); // 전송 중 상태
+  const [submitted, setSubmitted] = useState(false);    // 전송 완료 상태
+  const fileRef = useRef(null);                         // 숨겨진 file input 참조
 
+  // 모달이 닫혀있으면 렌더링하지 않음
   if (!isOpen) return null;
 
+  // 이미지 파일 선택 시 미리보기 URL 생성
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -35,6 +46,7 @@ export default function ReportModal({ isOpen, onClose, userLocation }) {
   };
 
   const handleSubmit = async () => {
+    // GPS 위치 없으면 제출 불가
     if (!userLocation) {
       alert('현재 위치를 확인할 수 없습니다.');
       return;
@@ -42,36 +54,29 @@ export default function ReportModal({ isOpen, onClose, userLocation }) {
 
     setIsSubmitting(true);
     try {
-      let imageUrl = null;
-
-      // 이미지가 있으면 Supabase Storage에 업로드
+      // multipart/form-data 구성 — 이미지 + 텍스트 데이터 통합 전송
+      // 백엔드(reports.py)에서 이미지 업로드 + DB INSERT를 한번에 처리
+      const formData = new FormData();
+      formData.append('latitude', userLocation.lat);
+      formData.append('longitude', userLocation.lng);
+      formData.append('type', type);
+      formData.append('severity', severity);
       if (imageFile) {
-        const formData = new FormData();
-        formData.append('file', imageFile);
-        const uploadRes = await fetch(`${API_URL}/api/barriers/upload`, {
-          method: 'POST',
-          body: formData,
-        });
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          imageUrl = uploadData.url;
-        }
+        formData.append('image', imageFile);  // 이미지 첨부 (선택)
       }
 
-      // 신고 데이터 전송 → SSE broadcast 트리거
-      const res = await fetch(`${API_URL}/api/barriers`, {
+      // PRD v3.0 엔드포인트: POST /api/report (multipart/form-data)
+      const res = await fetch(`${API_URL}/api/report`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          latitude: userLocation.lat,
-          longitude: userLocation.lng,
-          type,
-          severity,
-          image_url: imageUrl,
-        }),
+        headers: {
+          // JWT 토큰 — Supabase Auth 로그인 후 발급된 토큰
+          Authorization: `Bearer ${localStorage.getItem('sb_access_token') || ''}`,
+        },
+        body: formData,
       });
 
       if (res.ok) {
+        // 전송 성공 → 완료 메시지 표시 후 1.5초 뒤 모달 닫기
         setSubmitted(true);
         setTimeout(() => {
           setSubmitted(false);
@@ -81,6 +86,9 @@ export default function ReportModal({ isOpen, onClose, userLocation }) {
           setSeverity(3);
           onClose();
         }, 1500);
+      } else {
+        const err = await res.json();
+        alert(`신고 실패: ${err.error || '알 수 없는 오류'}`);
       }
     } catch (err) {
       console.error('신고 실패:', err);
@@ -91,8 +99,10 @@ export default function ReportModal({ isOpen, onClose, userLocation }) {
   };
 
   return (
+    // 배경 오버레이 — 클릭 시 모달 닫기
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
          onClick={onClose}>
+      {/* 모달 본체 — 클릭 이벤트 버블링 차단 */}
       <div
         className="w-full max-w-lg bg-white rounded-t-2xl p-6 space-y-4 animate-slide-up"
         onClick={(e) => e.stopPropagation()}
@@ -104,6 +114,7 @@ export default function ReportModal({ isOpen, onClose, userLocation }) {
         </div>
 
         {submitted ? (
+          // 전송 완료 화면
           <div className="text-center py-8">
             <p className="text-4xl mb-2">✅</p>
             <p className="text-green-600 font-bold text-lg">신고가 접수되었습니다!</p>
@@ -111,7 +122,7 @@ export default function ReportModal({ isOpen, onClose, userLocation }) {
           </div>
         ) : (
           <>
-            {/* 위험 유형 선택 */}
+            {/* 위험 유형 선택 — 2x2 그리드 버튼 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">위험 유형</label>
               <div className="grid grid-cols-2 gap-2">
@@ -131,7 +142,7 @@ export default function ReportModal({ isOpen, onClose, userLocation }) {
               </div>
             </div>
 
-            {/* 위험도 슬라이더 */}
+            {/* 위험도 슬라이더 (1~5) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 위험도: <span className="text-red-500 font-bold">{severity}/5</span>
@@ -150,24 +161,24 @@ export default function ReportModal({ isOpen, onClose, userLocation }) {
               </div>
             </div>
 
-            {/* 사진 업로드 */}
+            {/* 사진 업로드 — 클릭 시 파일 선택 창 열기 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">사진 첨부 (선택)</label>
               <div
-                onClick={() => fileRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-4
-                           flex flex-col items-center justify-center cursor-pointer
-                           hover:border-red-400 transition-colors"
+                onClick={() => fileRef.current.click()}
+                className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-red-300 transition-colors"
               >
                 {preview ? (
-                  <img src={preview} alt="미리보기" className="w-full h-32 object-cover rounded-lg" />
+                  // 이미지 미리보기
+                  <img src={preview} alt="미리보기" className="max-h-32 mx-auto rounded object-cover" />
                 ) : (
-                  <>
-                    <span className="text-3xl">📷</span>
-                    <span className="text-sm text-gray-500 mt-1">탭하여 사진 추가</span>
-                  </>
+                  <div className="text-gray-400 text-sm">
+                    <p className="text-2xl mb-1">📷</p>
+                    <p>클릭하여 사진 선택</p>
+                  </div>
                 )}
               </div>
+              {/* 숨겨진 file input — 위 div 클릭 시 프로그래밍적으로 열림 */}
               <input
                 ref={fileRef}
                 type="file"
@@ -181,11 +192,10 @@ export default function ReportModal({ isOpen, onClose, userLocation }) {
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="w-full py-3 bg-red-500 text-white font-bold rounded-xl
-                         hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed
-                         transition-colors text-lg"
+              className="w-full py-3 bg-red-500 hover:bg-red-600 disabled:bg-gray-300
+                         text-white font-bold rounded-xl transition-colors"
             >
-              {isSubmitting ? '전송 중...' : '🚨 모두에게 알리기'}
+              {isSubmitting ? '신고 전송 중...' : '신고하기'}
             </button>
           </>
         )}
