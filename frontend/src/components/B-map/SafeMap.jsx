@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet'; // Leaflet 직접 참조 추가
 import 'leaflet/dist/leaflet.css';
 import useUIStore from '../../store/useUIStore';
+import BarrierFacilityMarkers from './barrier_FacilityMarkers';
 
 // --- Leaflet 기본 아이콘 경로 설정 (아이콘 깨짐 방지) ---
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -54,6 +55,9 @@ const SafeMap = () => {
 
         {/* 중심 좌표가 바뀌면 지도를 이동시킵니다 */}
         <MapController center={mapCenter} zoom={defaultZoom} />
+
+        {/* 300m 반경 무장애 (실내/실외) 편의 시설 & 관광지 표시 컴포넌트 */}
+        <BarrierFacilityMarkers />
 
         {/* 경로 데이터(routeInfo.path)가 존재할 때만 지도 위에 파란색 선을 그립니다 */}
         {routeInfo && routeInfo.path && routeInfo.path.length > 0 && (
