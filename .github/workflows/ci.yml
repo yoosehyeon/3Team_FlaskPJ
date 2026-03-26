@@ -1,0 +1,26 @@
+name: CI
+
+on: [pull_request]
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          # master의 환경과 일치하는 3.10 고정!
+          python-version: "3.10"
+      - name: 백엔드 의존성 설치 검증
+        run: pip install -r backend/requirements.txt
+
+  frontend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: 프론트엔드 의존성 설치 검증
+        working-directory: ./frontend
+        run: npm ci
