@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Map, MapMarker, MarkerClusterer, Polyline, ZoomControl, useKakaoLoader } from 'react-kakao-maps-sdk';
-import { ShieldAlert, Loader2 } from 'lucide-react';
+import { Map, MapMarker, MarkerClusterer, Polyline, ZoomControl, useKakaoLoader, CustomOverlayMap } from 'react-kakao-maps-sdk';
+import { ShieldAlert, Loader2, X, Info } from 'lucide-react';
 
 import useUIStore from '../store/useUIStore';
 import useMapStore from '../store/useMapStore';
@@ -22,6 +22,7 @@ const MapPage = () => {
     });
 
     const [center, setCenter] = useState({ lat: 37.2635727, lng: 127.0287149 });
+    const [selectedElevator, setSelectedElevator] = useState(null);
     
     // Zustand Stores
     const routeInfo = useUIStore((state) => state.routeInfo);
@@ -80,10 +81,8 @@ const MapPage = () => {
 
     return (
         <div className="relative w-full h-screen bg-gray-100 overflow-hidden">
-            {/* 1. 상단 검색창 컴포넌트 */}
             <MapSearch />
 
-            {/* 2. 실시간 위험 신고 버튼 (PRD 3.1) */}
             <button
                 onClick={openReportModal}
                 className="absolute bottom-10 right-6 z-[1000] flex items-center gap-2 px-6 py-4 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-2xl transition-all transform hover:scale-105 active:scale-95 font-bold group"
@@ -95,12 +94,11 @@ const MapPage = () => {
                 </div>
             </button>
 
-            {/* 3. 메인 지도 영역 */}
             <Map
                 center={center}
                 className="w-full h-full"
                 level={3}
-                onCenterChanged={(map) => {
+                onIdle={(map) => {
                     const latlng = map.getCenter();
                     setCenter({ lat: latlng.getLat(), lng: latlng.getLng() });
                 }}
@@ -129,18 +127,54 @@ const MapPage = () => {
                     ))}
                 </MarkerClusterer>
 
-                {/* 엘리베이터 마커 */}
-                {elevatorsData?.elevators?.map((e, i) => (
-                    <MapMarker
-                        key={`ev-${i}`}
-                        position={{ lat: e.coordinates[1], lng: e.coordinates[0] }}
-                        title={`${e.name} (${e.status})`}
-                        image={{
-                            src: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
-                            size: { width: 24, height: 35 }
-                        }}
-                    />
-                ))}
+                {/* 엘리베이터 마커 (PRD 3.2: 이미지 깨짐 방지를 위한 텍스트 오버레이 마커) */}
+                {elevatorsData?.elevators?.map((e, i) => {
+                    const isNormal = e.status === '정상' || e.status === 'normal';
+                    return (
+                        <React.Fragment key={`ev-group-${i}`}>
+                            <CustomOverlayMap position={{ lat: e.coordinates[0], lng: e.coordinates[1] }}>
+                                <div 
+                                    onClick={() => setSelectedElevator(e)}
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center border-2 border-white shadow-xl cursor-pointer transition-transform hover:scale-110 active:scale-95 ${
+                                        isNormal ? 'bg-green-500' : 'bg-red-500'
+                                    }`}
+                                >
+                                    <span className="text-[10px] font-bold text-white leading-none">
+                                        {isNormal ? '정상' : '점검'}
+                                    </span>
+                                </div>
+                            </CustomOverlayMap>
+
+                            {/* 상세 정보 팝업 (클릭 시 노출) */}
+                            {selectedElevator?.id === e.id && (
+                                <CustomOverlayMap position={{ lat: e.coordinates[0], lng: e.coordinates[1] }} yAnchor={1.6}>
+                                    <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 min-w-[210px] animate-in zoom-in-95 duration-200 z-[1002]">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div>
+                                                <h4 className="text-sm font-bold text-gray-900">{e.station_name}역</h4>
+                                                <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-1.5 py-0.5 rounded">{e.line}</span>
+                                            </div>
+                                            <button onClick={() => setSelectedElevator(null)} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                                                <X size={14} className="text-gray-400" />
+                                            </button>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="flex items-start gap-2 text-[11px] text-gray-600 leading-tight">
+                                                <Info size={12} className="mt-0.5 flex-shrink-0" />
+                                                <span>{e.location}</span>
+                                            </div>
+                                            <div className={`text-[10px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1 ${isNormal ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                                                <div className={`w-1.5 h-1.5 rounded-full ${isNormal ? 'bg-green-500' : 'bg-red-500'}`} />
+                                                상태: {e.status}
+                                            </div>
+                                        </div>
+                                        <div className="absolute bottom-[-8px] left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-r border-b border-gray-100"></div>
+                                    </div>
+                                </CustomOverlayMap>
+                            )}
+                        </React.Fragment>
+                    );
+                })}
 
                 {/* 실시간 위험 신고 마커 (F5 엔진 핵심) */}
                 {dangerMarkers.map((m) => (
