@@ -24,6 +24,11 @@ const useUIStore = create((set) => ({
   setMapCenter: (center) => set({ mapCenter: center }),
   setRouteInfo: (info) => set({ routeInfo: info }),
 
+  // 🚨 [추가] 위험 신고 모달 전역 상태
+  isReportModalOpen: false,
+  openReportModal: () => set({ isReportModalOpen: true }),
+  closeReportModal: () => set({ isReportModalOpen: false }),
+
   // 로딩 & 에러
   isLoading: false,
   error: null,
