@@ -18,25 +18,6 @@ function cn(...inputs) {
 
 // ... Header, Hero, FeatureSection 컴포넌트들 ... (기존과 동일하게 UIStore 구독 중)
 
-function Header() {
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-blue-600 tracking-tight">모두의 길</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="w-11 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-full transition-colors" aria-label="검색">
-            <Search size={20} />
-          </button>
-          <button className="w-11 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-full transition-colors" aria-label="설정">
-            <Settings size={20} />
-          </button>
-        </div>
-      </div>
-    </header>
-  );
-}
 
 function Hero() {
   const openReportModal = useUIStore((state) => state.openReportModal);
@@ -44,7 +25,7 @@ function Hero() {
   const navigate = useNavigate();
 
   return (
-    <section className="relative h-[640px] flex items-center overflow-hidden pt-16">
+    <section className="relative h-[640px] flex items-center overflow-hidden">
       <div className="absolute inset-0 z-0">
         <img
           src="https://images.unsplash.com/photo-1516733725897-1aa73b87c8e8?q=80&w=2070&auto=format&fit=crop"
@@ -139,7 +120,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
-      <Header />
       <main>
         <Hero />
         <FeatureSection />
