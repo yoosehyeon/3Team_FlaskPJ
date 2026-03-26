@@ -24,6 +24,10 @@ const useUIStore = create((set) => ({
   setMapCenter: (center) => set({ mapCenter: center }),
   setRouteInfo: (info) => set({ routeInfo: info }),
 
+  // 🚨 [Barrier-Free] 무장애 편의 시설 데이터
+  barrierPlaces: [],
+  setBarrierPlaces: (places) => set({ barrierPlaces: places }),
+
   // 로딩 & 에러
   isLoading: false,
   error: null,

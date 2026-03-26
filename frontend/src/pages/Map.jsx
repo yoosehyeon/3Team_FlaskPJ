@@ -1,5 +1,5 @@
 import React from 'react';
-import SafeMap from '../components/B-map/SafeMap';
+import SafeMap from '../components/Barrier_Free/SafeMap';
 import MapSearch from '../components/B-map/MapSearch';
 
 export default function MapPage() {
