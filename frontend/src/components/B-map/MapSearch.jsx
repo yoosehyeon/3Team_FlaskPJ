@@ -14,6 +14,15 @@ export default function MapSearch() {
 
   // 스토어 상태
   const { wheelchairInfo, transitInfo, setRouteInfo } = useUIStore();
+
+  // [추가] 경로 데이터 변경 시 지도 자동 동기화
+  React.useEffect(() => {
+    if (selectedMode === 'wheelchair' && wheelchairInfo) {
+      setRouteInfo(wheelchairInfo);
+    } else if (selectedMode === 'transit' && transitInfo) {
+      setRouteInfo(transitInfo);
+    }
+  }, [wheelchairInfo, transitInfo, selectedMode, setRouteInfo]);
   
   // 훅 초기화
   const wheelchairMutation = useSafeRoute();
@@ -104,8 +113,8 @@ export default function MapSearch() {
         </button>
       </div>
 
-      {/* 검색 패널 (접기 상태 반영: 즉시 숨김) */}
-      <div className={`flex flex-col gap-4 w-full max-w-md ${isCollapsed ? 'hidden' : 'block'}`}>
+      {/* 검색 패널 (고정 너비 380px 설정으로 모드 전환 시 너비 변동 방지) */}
+      <div className={`flex flex-col gap-4 w-[380px] ${isCollapsed ? 'hidden' : 'block'}`}>
         <form onSubmit={handleSearch} className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-6 border border-white/20">
           <div className="flex flex-col gap-3 mb-4">
             <div className="flex items-center gap-3">
