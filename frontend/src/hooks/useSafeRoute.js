@@ -18,8 +18,8 @@ export const useSafeRoute = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          start_place: start,
-          end_place: end,
+          start: start,
+          end: end,
         }),
       });
 

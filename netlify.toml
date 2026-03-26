@@ -1,10 +1,8 @@
+# netlify.toml (프로젝트 루트)
 [build]
-  # 프로젝트 루트 하위의 frontend 폴더를 빌드 타겟으로 명시! (에러 방어)
-  base = "frontend"
   command = "npm run build"
   publish = "dist"
 
-# React SPA 특성상 페이지 새로고침 시 404가 뜨는 것을 방어
 [[redirects]]
   from = "/*"
   to = "/index.html"

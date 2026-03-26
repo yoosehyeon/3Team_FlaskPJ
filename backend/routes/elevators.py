@@ -1,41 +1,67 @@
-import requests
-import xml.etree.ElementTree as ET
-from supabase import create_client, Client
+from flask import Blueprint, jsonify
+from sqlalchemy import text
+from db import engine
 
-# Supabase 연결
-SUPABASE_URL = "http://127.0.0.1:54321"
-SUPABASE_KEY = "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH"
+elevators_bp = Blueprint("elevators", __name__)
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+@elevators_bp.route("/api/elevators", methods=["GET"])
+def get_elevators():
+    try:
+        # 도대체 테이블에 뭐가 있는지 일단 다 가져와 봅니다.
+        query = text("SELECT * FROM elevators")
 
-# 공공 API
-API_KEY = "b1d6920525b14c029524e3530284b8b0"
-url = f"https://openapi.gg.go.kr/TBGGSTATNELVM?KEY={API_KEY}&Type=xml&pIndex=1&pSize=1000"
+        with engine.connect() as conn:
+            result = conn.execute(query)
+            rows = result.mappings().all()
 
-response = requests.get(url)
-root = ET.fromstring(response.text)
+        # 🚨 [중요] 터미널에 첫 번째 데이터의 진짜 모습을 출력합니다!
+        if rows:
+            print("\n================ [DB 데이터 구조 확인] ================")
+            print(dict(rows[0]))
+            print("========================================================\n")
 
-print("===== 수원 엘리베이터 DB 저장 시작 =====")
+        elevators_list = []
+        for row in rows:
+            lng, lat = 0.0, 0.0
+            
+            # 1. 만약 lat, lng 이라는 칸이 따로 있다면 그걸 씁니다.
+            if 'lat' in row and 'lng' in row:
+                try:
+                    lat = float(row['lat'])
+                    lng = float(row['lng'])
+                except: pass
+            
+            # 2. latitude, longitude 라는 칸이 있다면 그걸 씁니다.
+            elif 'latitude' in row and 'longitude' in row:
+                try:
+                    lat = float(row['latitude'])
+                    lng = float(row['longitude'])
+                except: pass
+            
+            # 3. location 칸을 파싱해봅니다 (단, '2F' 같은 글자가 나오면 무시하고 안 뻗게 만듭니다!)
+            else:
+                loc = row.get('location')
+                if loc and isinstance(loc, str):
+                    try:
+                        cleaned = loc.replace('(', '').replace(')', '').replace('POINT', '').replace(',', ' ')
+                        parts = cleaned.split()
+                        if len(parts) >= 2:
+                            lng = float(parts[0])
+                            lat = float(parts[1])
+                    except ValueError:
+                        pass # '2F' 같은 글자가 나와도 그냥 패스! (0.0, 0.0으로 처리)
 
-for row in root.findall("row"):
-    station = row.find("STATN_NM").text if row.find("STATN_NM") is not None else None
+            elevators_list.append({
+                "id": str(row['id']),
+                "coordinates": [lng, lat]
+            })
 
-    if station and "수원" in station:
-        location = row.find("LOC").text if row.find("LOC") is not None else None
-        line = row.find("OPR_ROUTE_NM").text if row.find("OPR_ROUTE_NM") is not None else None
-        operator = row.find("RAILROAD_OPR_INST_NM").text if row.find("RAILROAD_OPR_INST_NM") is not None else None
+        return jsonify({
+            "status": "success",
+            "elevators": elevators_list
+        })
 
-        data = {
-            "station_name": station,
-            "line_name": line,
-            "location": location,
-            "start_floor": None,
-            "end_floor": None,
-            "status": "정상",
-            "operator": operator
-        }
-
-        result = supabase.table("elevators").insert(data).execute()
-        print(result)
-
-print("===== 저장 완료 =====")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Database query failed: {str(e)}"}), 500

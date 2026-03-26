@@ -6,8 +6,7 @@ from flask import Flask, jsonify
 # .env 파일 로드
 load_dotenv()
 from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+from extensions import limiter
 
 app = Flask(__name__)
 log = structlog.get_logger()
@@ -34,13 +33,8 @@ def create_cors_origins() -> list[str]:
 # Netlify ↔ Cloudtype CORS 세팅 
 CORS(app, origins=create_cors_origins(), supports_credentials=True)
 
-# 무차별 접속 방어 (Redis 제외, 메모리 단독 모드)
-limiter = Limiter(
-    key_func=get_remote_address,
-    app=app,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://",
-)
+# Limiter app 등록
+limiter.init_app(app)
 
 # ----------------------------
 # 전역 에러 핸들러
@@ -54,11 +48,20 @@ def internal_error(e):
     log.error("internal_server_error", error=str(e))
     return jsonify({"error": "Internal server error"}), 500
 
-# 헬스체크 진입 라우트 블루프린트 등록
+# 라우트 블루프린트 등록
 from routes.health import health_bp
-# from routes.route import route_bp 등은 향후 추가로 여기에 작성
+from routes.route import route_bp
+from routes.places import places_bp
+from routes.reports import reports_bp
+from routes.transit import transit_bp
+from routes.elevators import elevators_bp
 
 app.register_blueprint(health_bp)
+app.register_blueprint(route_bp)
+app.register_blueprint(places_bp)
+app.register_blueprint(reports_bp)
+app.register_blueprint(transit_bp)
+app.register_blueprint(elevators_bp)
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
