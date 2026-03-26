@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import api from '../lib/api';
 
 const fetchPlaces = async (lat, lng, radius = 300) => {
-  const { data } = await axios.get("/api/places", {
+  const { data } = await api.get("/api/places", {
     params: { lat, lng, radius },
   });
   return data;

@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import api from '../lib/api';
 
 const fetchElevators = async () => {
-  const { data } = await axios.get("/api/elevators");
+  const { data } = await api.get("/api/elevators");
   return data;
 };
 

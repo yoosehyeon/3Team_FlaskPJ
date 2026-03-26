@@ -2,32 +2,16 @@ import { useMutation } from '@tanstack/react-query';
 // 수정: 우리가 맞춘 스토어 이름인 useUIStore로 가져옵니다.
 import useUIStore from '../store/useUIStore';
 
+import api from '../lib/api';
+
 export const useSafeRoute = () => {
-  // 창고에서 데이터를 저장하는 함수를 가져옵니다.
   const setRouteInfo = useUIStore((state) => state.setRouteInfo);
   const setMapCenter = useUIStore((state) => state.setMapCenter);
 
-  // useMutation은 '데이터를 생성/검색'하는 요청에 최적화되어 있습니다.
   return useMutation({
-    // 1. 실제 백엔드와 통신하는 함수
     mutationFn: async ({ start, end }) => {
-      // 수정: 비교 기능이 빠졌으므로 일반 경로 API로 요청을 보냅니다.
-      const response = await fetch('/api/route', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          start: start,
-          end: end,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('경로를 불러오는 데 실패했습니다.');
-      }
-
-      return response.json();
+      const res = await api.post('/api/route', { start, end });
+      return res.data;
     },
 
     // 2. 통신 성공 시 실행될 로직
