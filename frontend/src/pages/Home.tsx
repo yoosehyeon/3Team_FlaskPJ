@@ -1,7 +1,9 @@
-import React, { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "../lib/supabase";
+// React 자체는 사용하지 않으므로 삭제하고, 필요한 Hook만 남깁니다.
+import { useEffect, useRef } from "react";
 
+// supabase를 나중에 쓸 예정이라면 주석 처리하거나, 아예 삭제하세요.
+// import { supabase } from "../lib/supabase";
 export default function Home() {
   const mapRef = useRef<HTMLDivElement>(null);
   const kakaoMapInstance = useRef<any>(null);
@@ -20,13 +22,13 @@ export default function Home() {
     if (typeof window !== "undefined" && window.kakao) {
       window.kakao.maps.load(() => {
         if (!mapRef.current) return;
-        
+
         // 수원시 권선구청 근처 중심 좌표 (예시)
         const options = {
           center: new window.kakao.maps.LatLng(37.2635727, 127.0286009),
           level: 3,
         };
-        
+
         kakaoMapInstance.current = new window.kakao.maps.Map(mapRef.current, options);
       });
     }
@@ -34,9 +36,9 @@ export default function Home() {
 
   return (
     <div className="w-full h-full absolute inset-0">
-      <div 
-        ref={mapRef} 
-        style={{ width: "100%", height: "100%" }} 
+      <div
+        ref={mapRef}
+        style={{ width: "100%", height: "100%" }}
       />
       {health?.status === "ok" && (
         <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-slate-200 z-10">
