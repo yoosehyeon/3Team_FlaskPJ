@@ -39,6 +39,10 @@ limiter = Limiter(
     storage_uri=os.getenv("REDIS_URL", "memory://"),
 )
 
+@app.route('/')
+def home():
+    return "백엔드 서버가 아주 잘 돌아가고 있습니다! (포트: 5000)"
+
 # 전역 에러 핸들러
 @app.errorhandler(404)
 def not_found(e):
