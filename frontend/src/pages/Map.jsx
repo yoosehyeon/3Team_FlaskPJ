@@ -56,25 +56,46 @@ const MapPage = () => {
         return () => clearInterval(timer);
     }, [loading, setDangerMarkers, cleanupOldMarkers]);
 
-    // 3. 통합 경로 시각화 (휠체어/대중교통 하이브리드 대응)
-    const linePath = React.useMemo(() => {
+    // 3. 통합 경로 시각화 엔진 (PRD 4.2: 구간별 색상 및 마커 최적화)
+    const routeLayers = React.useMemo(() => {
         if (!routeInfo) return [];
-        const path = [];
+        const layers = [];
 
         // CASE 1: 대중교통 데이터 (steps 기반)
         if (routeInfo.steps) {
-            routeInfo.steps.forEach(step => {
+            routeInfo.steps.forEach((step, idx) => {
+                const path = [];
                 if (step.path && Array.isArray(step.path)) {
                     step.path.forEach(coord => {
                         path.push({ lat: coord.lat, lng: coord.lng });
                     });
                 }
+
+                if (path.length > 0) {
+                    let color = "#94a3b8"; // 기본 회색 (도보)
+                    let dash = false;
+                    
+                    if (step.type === 1) color = "#00b050"; // 지하철 (녹색)
+                    else if (step.type === 2) color = "#6366f1"; // 버스 (보라)
+                    else if (step.type === 3) dash = true; // 도보 (점선)
+
+                    layers.push({
+                        id: `step-${idx}`,
+                        path,
+                        color,
+                        dash,
+                        type: step.type,
+                        busNo: step.busNo,
+                        startName: step.startName
+                    });
+                }
             });
-            return path;
+            return layers;
         }
 
         // CASE 2: Tmap 휠체어 전용 데이터 (features 기반)
         if (routeInfo.features) {
+            const path = [];
             routeInfo.features.forEach(feature => {
                 if (feature.geometry.type === "LineString") {
                     feature.geometry.coordinates.forEach(coord => {
@@ -82,11 +103,28 @@ const MapPage = () => {
                     });
                 }
             });
-            return path;
+            
+            if (path.length > 0) {
+                // 장애물 유무에 따른 색상 분기 (PRD 3.1)
+                const color = routeInfo.has_obstacle ? "#f97316" : "#3b82f6";
+                layers.push({ id: 'wheelchair-path', path, color, dash: false });
+            }
+            return layers;
         }
 
         return [];
     }, [routeInfo]);
+
+    // 4. 경로 검색 시 지도 영역 자동 조정 (PRD 4.1)
+    const [map, setMap] = useState(null);
+    useEffect(() => {
+        if (!map || routeLayers.length === 0) return;
+        const bounds = new window.kakao.maps.LatLngBounds();
+        routeLayers.forEach(layer => {
+            layer.path.forEach(p => bounds.extend(new window.kakao.maps.LatLng(p.lat, p.lng)));
+        });
+        map.setBounds(bounds, 80); // padding 80px
+    }, [map, routeLayers]);
 
     if (loading) {
         return (
@@ -116,6 +154,7 @@ const MapPage = () => {
                 center={center}
                 className="w-full h-full"
                 level={3}
+                onCreate={setMap}
                 onIdle={(map) => {
                     const latlng = map.getCenter();
                     setCenter({ lat: latlng.getLat(), lng: latlng.getLng() });
@@ -123,36 +162,47 @@ const MapPage = () => {
             >
                 <ZoomControl position="RIGHT" />
 
-                {/* 경로 시각화 및 출발/도착 지점 표시 */}
-                {linePath.length > 0 && (
-                    <>
+                {/* 경로 레이어 렌더링 (구간별 색상 차별화) */}
+                {routeLayers.map((layer) => (
+                    <React.Fragment key={layer.id}>
                         <Polyline
-                            path={linePath}
-                            strokeWeight={6}
-                            strokeColor="#3b82f6"
+                            path={layer.path}
+                            strokeWeight={layer.type === 2 || layer.type === 1 ? 8 : 6}
+                            strokeColor={layer.color}
                             strokeOpacity={0.8}
-                            strokeStyle="solid"
+                            strokeStyle={layer.dash ? 'dash' : 'solid'}
                         />
-                        {/* 출발지 커스텀 내비 핀 (파란색) */}
-                        <CustomOverlayMap position={linePath[0]} yAnchor={1.1}>
+                        {/* 버스/지하철 탑승 지점 아이콘 */}
+                        {(layer.type === 1 || layer.type === 2) && (
+                            <CustomOverlayMap position={layer.path[0]} yAnchor={1}>
+                                <div className={`px-2 py-1 rounded-md shadow-lg border border-white text-[10px] font-bold text-white mb-2 ${layer.type === 1 ? 'bg-green-600' : 'bg-indigo-600'}`}>
+                                    {layer.type === 1 ? '지하철역' : `${layer.busNo}번 승차`}
+                                </div>
+                            </CustomOverlayMap>
+                        )}
+                    </React.Fragment>
+                ))}
+
+                {/* 출발/도착 마커 (항상 최상단) */}
+                {routeLayers.length > 0 && (
+                    <>
+                        <CustomOverlayMap position={routeLayers[0].path[0]} yAnchor={1.1}>
                             <div className="relative flex flex-col items-center">
-                                {/* 상단 원형 + 글씨 */}
-                                <div className="w-12 h-12 bg-blue-600 rounded-full shadow-2xl border-2 border-white flex items-center justify-center z-10">
+                                <div className="w-12 h-12 bg-blue-600 rounded-full shadow-2xl border-2 border-white flex items-center justify-center z-10 animate-bounce">
                                     <span className="text-white text-[12px] font-black leading-none">출발</span>
                                 </div>
-                                {/* 하단 꼬리 모양 (삼각형) */}
                                 <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[12px] border-t-blue-600 mt-[-2px] drop-shadow-lg"></div>
                             </div>
                         </CustomOverlayMap>
 
-                        {/* 도착지 커스텀 내비 핀 (빨간색) */}
-                        <CustomOverlayMap position={linePath[linePath.length - 1]} yAnchor={1.1}>
+                        <CustomOverlayMap 
+                            position={routeLayers[routeLayers.length - 1].path[routeLayers[routeLayers.length - 1].path.length - 1]} 
+                            yAnchor={1.1}
+                        >
                             <div className="relative flex flex-col items-center">
-                                {/* 상단 원형 + 글씨 */}
                                 <div className="w-12 h-12 bg-red-600 rounded-full shadow-2xl border-2 border-white flex items-center justify-center z-10">
                                     <span className="text-white text-[12px] font-black leading-none">도착</span>
                                 </div>
-                                {/* 하단 꼬리 모양 (삼각형) */}
                                 <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[12px] border-t-red-600 mt-[-2px] drop-shadow-lg"></div>
                             </div>
                         </CustomOverlayMap>

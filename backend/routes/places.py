@@ -2,17 +2,30 @@ import json
 from flask import Blueprint, request, jsonify
 from sqlalchemy import text
 from db import engine
+from pydantic import BaseModel, Field, ValidationError
 
 places_bp = Blueprint("places", __name__)
 
+# [백엔드 검증]: Request 쿼리 파라미터 유효성 검사 스키마
+class PlaceQueryParams(BaseModel):
+    lat: float = Field(..., ge=-90, le=90, description="위도")
+    lng: float = Field(..., ge=-180, le=180, description="경도")
+    radius: int = Field(default=300, ge=10, le=5000, description="검색 반경(m)")
+
 @places_bp.route("/api/places", methods=["GET"])
 def get_places():
-    lat = request.args.get("lat", type=float)
-    lng = request.args.get("lng", type=float)
-    radius = request.args.get("radius", default=300, type=int)
-
-    if lat is None or lng is None:
-        return jsonify({"error": "Query parameters 'lat' and 'lng' are required."}), 400
+    try:
+        # Pydantic 파싱 (실패 시 400 에러 및 구체적인 사유 반환)
+        params = PlaceQueryParams(
+            lat=request.args.get("lat"),
+            lng=request.args.get("lng"),
+            radius=request.args.get("radius", 300)
+        )
+    except ValidationError as e:
+        return jsonify({
+            "error": "잘못된 요청 파라미터입니다. (위경도 또는 반경 값 확인)",
+            "details": e.errors()
+        }), 400
 
     try:
         # DB 연결 및 ST_DWithin 조회
@@ -30,7 +43,7 @@ def get_places():
         """)
 
         with engine.connect() as conn:
-            result = conn.execute(query, {"lng": lng, "lat": lat, "radius": radius})
+            result = conn.execute(query, {"lng": params.lng, "lat": params.lat, "radius": params.radius})
             rows = result.mappings().all()
 
         features = []

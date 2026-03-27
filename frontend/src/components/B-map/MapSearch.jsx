@@ -184,15 +184,23 @@ export default function MapSearch() {
                     <span className="text-sm font-bold">저상버스 노선 정보</span>
                   </div>
                   <div className="space-y-2">
-                    {transitInfo?.steps.filter(s => s.type === 2).map((s, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-indigo-50 rounded-xl border border-indigo-100">
-                        <span className="text-xs font-bold text-indigo-900">{s.busNo}번</span>
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${s.isLowFloor ? 'bg-indigo-600 text-white' : 'bg-gray-300 text-white'}`}>
-                          {s.isLowFloor ? '저상버스' : '일반'}
-                        </span>
+                    {transitInfo?.message && (!transitInfo?.steps || transitInfo.steps.length === 0) ? (
+                      <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-700 text-xs font-medium leading-relaxed border border-indigo-100 text-center">
+                        🚨 {transitInfo.message}
                       </div>
-                    ))}
-                    <p className="text-[10px] text-gray-400 text-center mt-2 font-medium">* 위 시간은 대중교통 평균 고정값 기준입니다.</p>
+                    ) : (
+                      <>
+                        {transitInfo?.steps.filter(s => s.type === 2).map((s, i) => (
+                          <div key={i} className="flex items-center justify-between p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                            <span className="text-xs font-bold text-indigo-900">{s.busNo}번</span>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${s.isLowFloor ? 'bg-indigo-600 text-white' : 'bg-gray-300 text-white'}`}>
+                              {s.isLowFloor ? '저상버스' : '일반'}
+                            </span>
+                          </div>
+                        ))}
+                        <p className="text-[10px] text-gray-400 text-center mt-2 font-medium">* 위 시간은 대중교통 평균 고정값 기준입니다.</p>
+                      </>
+                    )}
                   </div>
                 </div>
               )}

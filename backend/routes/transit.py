@@ -13,6 +13,68 @@ log = structlog.get_logger()
 ODSAY_KEY = os.getenv("ODSAY_API_KEY")
 TMAP_KEY = os.getenv("TMAP_API_KEY")
 PUBLIC_KEY = unquote(os.getenv("PUBLIC_DATA_API_KEY", ""))
+TRANSIT_MOCK = os.getenv("TRANSIT_MOCK", "false").lower() == "true"
+
+
+def generate_mock_transit(start_x, start_y, end_x, end_y):
+    """
+    수원시 실제 저상버스 노선 기반 Mock 데이터 생성.
+    Tmap API를 호출하여 실제 도로를 따라가는 정밀 경로(곡선)를 생성함.
+    """
+    import math
+    dx = float(end_x) - float(start_x)
+    dy = float(end_y) - float(start_y)
+    total_dist = math.sqrt(dx**2 + dy**2) * 111000
+    total_time = max(10, int(total_dist / 400))
+
+    suwon_low_floor_routes = [
+        {"busNo": "13-1", "startName": "수원남부공영차고지", "endName": "망포역", "isLowFloor": True},
+        {"busNo": "19",   "startName": "수원역",           "endName": "영통구청",  "isLowFloor": True},
+        {"busNo": "30",   "startName": "수원남부공영차고지", "endName": "구운동삼환아파트", "isLowFloor": True},
+        {"busNo": "7780", "startName": "수원시청",          "endName": "강남역",   "isLowFloor": True},
+    ]
+
+    import random
+    random.seed(int(float(start_x) * 1000))
+    route = random.choice(suwon_low_floor_routes)
+
+    # 실제 곡선 경로 확보를 위해 Tmap 호출 (Mock 상황에서도 길은 제대로 보여주기 위함)
+    real_path = get_tmap_pedestrian(start_x, start_y, end_x, end_y)
+    
+    # 경로를 3등분하여 도보-버스-도보 시뮬레이션
+    path_len = len(real_path)
+    steps = []
+    
+    if path_len > 10:
+        p1, p2 = path_len // 4, (path_len * 3) // 4
+        # 1. 도보
+        steps.append({
+            "type": 3, "distance": 400, "sectionTime": 6, 
+            "path": real_path[:p1], "instruction": "출발지에서 승차 정류장까지 이동"
+        })
+        # 2. 버스
+        steps.append({
+            "type": 2, "distance": int(total_dist * 0.7), "sectionTime": int(total_time * 0.6),
+            "isLowFloor": route["isLowFloor"], "busNo": route["busNo"],
+            "startName": route["startName"], "endName": route["endName"],
+            "path": real_path[p1:p2]
+        })
+        # 3. 도보
+        steps.append({
+            "type": 3, "distance": 300, "sectionTime": 4, 
+            "path": real_path[p2:], "instruction": "하차 후 목적지까지 이동"
+        })
+    else:
+        # 경로가 너무 짧으면 그냥 전체 도보 처리
+        steps.append({"type": 3, "distance": int(total_dist), "sectionTime": total_time, "path": real_path})
+
+    return {
+        "status": "success",
+        "message": "[Mock Mode] 수원시 실제 저상버스 노선 기반 정밀 경로 안내",
+        "totalTime": total_time,
+        "totalDistance": int(total_dist),
+        "steps": steps
+    }
 
 @transit_bp.route("/api/transit", methods=["POST"])
 @limiter.limit("60 per minute")
@@ -20,6 +82,9 @@ def get_integrated_transit():
     """
     Tmap 보행자 + ODsay 대중교통 + 저상버스 실시간 매시업 라우트
     """
+    # 환경 변수 체크를 함수 안에서 수행 (HMR/Reload 대응)
+    transit_mock_env = os.getenv("TRANSIT_MOCK", "false").lower() == "true"
+    
     try:
         data = request.get_json()
         start_x = data.get("startX") # lng
@@ -43,7 +108,19 @@ def get_integrated_transit():
         od_data = od_res.json()
 
         if "result" not in od_data:
-            return jsonify({"status": "error", "message": "No transit routes found."}), 404
+            # Mock 모드가 켜져 있으면 실제 수원시 노선 기반 가상 데이터 반환
+            if transit_mock_env:
+                log.info("transit_mock_mode", reason="ODsay returned no result, using mock data")
+                return jsonify(generate_mock_transit(start_x, start_y, end_x, end_y)), 200
+
+            # Mock 모드 OFF: 심야 시간대 안내 메시지
+            return jsonify({
+                "status": "success",
+                "message": "현재 시간대(심야 등)에는 운행 중인 대중교통 노선이 없거나, 검색 가능한 경로가 없습니다.",
+                "totalTime": 0,
+                "totalDistance": 0,
+                "steps": []
+            }), 200
 
         # 최적 경로 (첫 번째) 분석
         path = od_data["result"]["path"][0]

@@ -13,6 +13,7 @@ export const TransitStepSchema = z.object({
 
 export const TransitResponseSchema = z.object({
   status: z.string(),
+  message: z.string().optional(),
   totalTime: z.number(),
   totalDistance: z.number(),
   steps: z.array(TransitStepSchema),
