@@ -1,9 +1,11 @@
 import random
 import uuid
+import structlog
 from flask import Blueprint, jsonify
 from sqlalchemy import text
 from db import engine
 
+log = structlog.get_logger()
 elevators_bp = Blueprint("elevators", __name__)
 
 # 1. 수원시 주요 역사별 대표 거점 좌표 정의 (PRD 2.2 가이드 준수)
@@ -25,15 +27,12 @@ STATION_COORDS = {
 
 @elevators_bp.route("/api/elevators", methods=["GET"])
 def get_elevators():
+    """
+    수원시 관내 엘리베이터 실시간 편의시설 정보 조회
+    [Update]: 실제 DB 스키마(station_name, line_name)와 필드 매핑 정규화
+    """
     try:
-        # 1. 테이블 존재 여부에 따른 동적 쿼리 (elevator vs elevators)
-        table_name = "elevator"
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("SELECT 1 FROM elevator LIMIT 1"))
-        except:
-            table_name = "elevators"
-
+        table_name = "elevators"
         query = text(f"SELECT * FROM {table_name}")
 
         with engine.connect() as conn:
@@ -44,29 +43,29 @@ def get_elevators():
         sorted_stations = sorted(STATION_COORDS.keys(), key=len, reverse=True)
 
         for row in rows:
-            data = dict(row) # 딕셔너리 변환으로 안전하게 접근
-            st_name = data.get("station_name") or data.get("name", "")
+            data = dict(row)
+            # [필드 정규화]: DB의 station_name 또는 name 사용
+            st_name = data.get("station_name") or data.get("name", "수원역")
             base_coord = None
 
-            # 역사명 매핑 로직
+            # [역사명 기반 좌표 매핑]
             for station in sorted_stations:
                 if station in st_name:
                     base_coord = STATION_COORDS[station]
                     break
             
-            # 매칭되는 역 좌표가 없는 경우 건너뜁니다 (지도 중앙에 뭉치지 않게)
             if not base_coord:
                 continue
 
-            # 지터링 적용 (동일 역 마커 분산)
-            jitter_lat = base_coord[0] + random.uniform(-0.00015, 0.00015)
-            jitter_lng = base_coord[1] + random.uniform(-0.00015, 0.00015)
+            # [지터링]: 동일 위치 마커 중첩 방지
+            jitter_lat = base_coord[0] + random.uniform(-0.0003, 0.0003)
+            jitter_lng = base_coord[1] + random.uniform(-0.0003, 0.0003)
 
             elevators_list.append({
                 "id": str(data.get('id', uuid.uuid4())),
                 "station_name": st_name,
                 "location": data.get("location", "상세 위치 정보 없음"),
-                "line": data.get("line", ""),
+                "line": data.get("line_name") or data.get("line", ""),
                 "status": data.get("status", "정상"),
                 "coordinates": [jitter_lat, jitter_lng]
             })
@@ -78,15 +77,5 @@ def get_elevators():
         })
 
     except Exception as e:
-        import traceback
-        err_msg = traceback.format_exc()
-        print(f"!!! Elevator API Error !!!\n{err_msg}")
-        return jsonify({
-            "error": "Database query failed",
-            "details": str(e)
-        }), 500
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": f"Database query failed: {str(e)}"}), 500
+        log.error("Elevator API Error", error=str(e))
+        return jsonify({"error": "Failed to fetch elevator data", "details": str(e)}), 500

@@ -249,9 +249,9 @@ def check_bus_arrival_info(station_id, bus_no):
         result_code = msg_header.get("resultCode")
         
         if str(result_code) != "0":
-            log.warning("GBIS API Error response", 
-                        code=result_code, 
-                        msg=msg_header.get("resultMessage", "No message"))
+            # log.warning("GBIS API Error response", 
+            #             code=result_code, 
+            #             msg=msg_header.get("resultMessage", "No message"))
             return False, None
 
         # [아이템 목록 탐색]: response -> msgBody -> busArrivalList
@@ -270,13 +270,13 @@ def check_bus_arrival_info(station_id, bus_no):
                 is_low_floor = (l1 == "1" or l2 == "1")
                 predict_time = item.get("predictTime1")
                 
-                log.info("Bus mapping success", 
-                         bus_no=bus_no, 
-                         is_low=is_low_floor, 
-                         predict=predict_time)
+                # log.info("Bus mapping success", 
+                #          bus_no=bus_no, 
+                #          is_low=is_low_floor, 
+                #          predict=predict_time)
                 return is_low_floor, str(predict_time) if predict_time is not None else None
 
-        log.info("No matching bus found in arrival list", bus_no=bus_no)
+        # log.info("No matching bus found in arrival list", bus_no=bus_no)
         return False, None
 
     except Exception as e:
