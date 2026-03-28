@@ -7,6 +7,7 @@ export const TransitStepSchema = z.object({
   path: z.array(z.object({ lat: z.number(), lng: z.number() })).optional(),
   isLowFloor: z.boolean().optional(),
   busNo: z.string().optional(),
+  predictTime: z.string().optional().nullable(),
   startName: z.string().optional(),
   endName: z.string().optional(),
 });

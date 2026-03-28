@@ -72,18 +72,26 @@ const MapPage = () => {
                 }
 
                 if (path.length > 0) {
-                    let color = "#94a3b8"; // 기본 회색 (도보)
-                    let dash = false;
+                    let color = "#F59E0B"; // 휠체어/도보 이동 (어텐션을 끄는 주황색)
+                    let style = 'shortdot'; // 아주 촘촘한 점선으로 변경 (두꺼운 ---- 느낌 제거)
+                    let weight = 5;
                     
-                    if (step.type === 1) color = "#00b050"; // 지하철 (녹색)
-                    else if (step.type === 2) color = "#6366f1"; // 버스 (보라)
-                    else if (step.type === 3) dash = true; // 도보 (점선)
+                    if (step.type === 1) {
+                        color = "#10B981"; // 지하철 (에메랄드 그린)
+                        style = 'solid';
+                        weight = 8;
+                    } else if (step.type === 2) {
+                        color = "#6366F1"; // 버스 (인디고 보라)
+                        style = 'solid';
+                        weight = 8; // 대중교통은 굵게
+                    }
 
                     layers.push({
                         id: `step-${idx}`,
                         path,
                         color,
-                        dash,
+                        style,
+                        weight,
                         type: step.type,
                         busNo: step.busNo,
                         startName: step.startName
@@ -107,7 +115,7 @@ const MapPage = () => {
             if (path.length > 0) {
                 // 장애물 유무에 따른 색상 분기 (PRD 3.1)
                 const color = routeInfo.has_obstacle ? "#f97316" : "#3b82f6";
-                layers.push({ id: 'wheelchair-path', path, color, dash: false });
+                layers.push({ id: 'wheelchair-path', path, color, style: 'solid', weight: 8 });
             }
             return layers;
         }
@@ -167,18 +175,25 @@ const MapPage = () => {
                     <React.Fragment key={layer.id}>
                         <Polyline
                             path={layer.path}
-                            strokeWeight={layer.type === 2 || layer.type === 1 ? 8 : 6}
+                            strokeWeight={layer.weight}
                             strokeColor={layer.color}
-                            strokeOpacity={0.8}
-                            strokeStyle={layer.dash ? 'dash' : 'solid'}
+                            strokeOpacity={1.0}
+                            strokeStyle={layer.style}
                         />
-                        {/* 버스/지하철 탑승 지점 아이콘 */}
+                        {/* 버스/지하철 탑승/하차 지점 아이콘 */}
                         {(layer.type === 1 || layer.type === 2) && (
-                            <CustomOverlayMap position={layer.path[0]} yAnchor={1}>
-                                <div className={`px-2 py-1 rounded-md shadow-lg border border-white text-[10px] font-bold text-white mb-2 ${layer.type === 1 ? 'bg-green-600' : 'bg-indigo-600'}`}>
-                                    {layer.type === 1 ? '지하철역' : `${layer.busNo}번 승차`}
-                                </div>
-                            </CustomOverlayMap>
+                            <>
+                                <CustomOverlayMap position={layer.path[0]} yAnchor={1}>
+                                    <div className={`px-2.5 py-1 rounded-md shadow-xl border-2 border-white text-[11px] font-extrabold text-white mb-2 ${layer.type === 1 ? 'bg-green-600' : 'bg-indigo-600'}`}>
+                                        {layer.type === 1 ? '지하철 승차' : `${layer.busNo}번 승차`}
+                                    </div>
+                                </CustomOverlayMap>
+                                <CustomOverlayMap position={layer.path[layer.path.length - 1]} yAnchor={1}>
+                                    <div className="px-2.5 py-1 rounded-md shadow-lg border-2 border-white text-[11px] font-extrabold text-white mb-2 bg-slate-700">
+                                        하차
+                                    </div>
+                                </CustomOverlayMap>
+                            </>
                         )}
                     </React.Fragment>
                 ))}

@@ -181,25 +181,92 @@ export default function MapSearch() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-indigo-600">
                     <Bus size={16} />
-                    <span className="text-sm font-bold">저상버스 노선 정보</span>
+                    <span className="text-sm font-bold">대중교통 상세 경로</span>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-[45vh] overflow-y-auto overscroll-contain pr-2 pb-6" style={{ pointerEvents: 'auto' }}>
                     {transitInfo?.message && (!transitInfo?.steps || transitInfo.steps.length === 0) ? (
                       <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-700 text-xs font-medium leading-relaxed border border-indigo-100 text-center">
                         🚨 {transitInfo.message}
                       </div>
                     ) : (
-                      <>
-                        {transitInfo?.steps.filter(s => s.type === 2).map((s, i) => (
-                          <div key={i} className="flex items-center justify-between p-3 bg-indigo-50 rounded-xl border border-indigo-100">
-                            <span className="text-xs font-bold text-indigo-900">{s.busNo}번</span>
-                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${s.isLowFloor ? 'bg-indigo-600 text-white' : 'bg-gray-300 text-white'}`}>
-                              {s.isLowFloor ? '저상버스' : '일반'}
-                            </span>
+                    <div className="flex flex-col gap-3 relative">
+                        {/* 세로 타임라인 굵은 선 (디자인 개선) */}
+                        <div className="absolute left-[20px] top-6 bottom-6 w-0.5 bg-indigo-100 z-0 opacity-60"></div>
+                        
+                        {transitInfo?.steps.map((s, i) => (
+                          <div key={i} className="flex items-start gap-4 p-4 bg-white hover:bg-slate-50 transition-all duration-200 rounded-2xl border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.03)] relative z-10 group">
+                            {s.type === 3 ? (
+                              <>
+                                <div className="mt-0.5 w-[42px] h-[42px] rounded-full bg-orange-50 flex items-center justify-center text-orange-500 border-4 border-white shadow-md shrink-0 transition-transform group-hover:scale-110">
+                                  <Ruler size={16} strokeWidth={2.5} />
+                                </div>
+                                <div className="flex flex-col w-full">
+                                  <span className="text-sm font-black text-slate-800 tracking-tight leading-tight">
+                                    {s.summary || (i === 0 ? '출발지 ➔ 승차 정류장' : (i === transitInfo.steps.length - 1 ? '하차 정류장 ➔ 도착지' : '도보 이동'))}
+                                  </span>
+                                  <div className="flex items-center gap-2 mt-1.5 font-bold">
+                                    <span className="text-[11px] px-2 py-0.5 bg-orange-100 text-orange-600 rounded-md shadow-sm">
+                                      약 {Math.ceil(s.distance / 60)}분
+                                    </span>
+                                    <span className="text-[11px] text-slate-400 font-medium">({s.distance}m)</span>
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className={`mt-0.5 w-[42px] h-[42px] rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg shrink-0 transition-transform group-hover:scale-110 ${s.type === 1 ? 'bg-emerald-500' : 'bg-indigo-600'}`}>
+                                  {s.type === 1 ? <Navigation size={16} strokeWidth={2.5}/> : <Bus size={16} strokeWidth={2.5}/>}
+                                </div>
+                                <div className="flex flex-col w-full">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className={`text-sm font-black tracking-tight ${s.type === 1 ? 'text-emerald-700' : 'text-indigo-900'}`}>
+                                      {s.type === 1 ? '지하철' : s.busNo}
+                                    </span>
+                                    {s.type === 2 && (
+                                      <div className="flex items-center gap-1.5">
+                                        {s.isLowFloor && (
+                                          <span className="text-[10px] font-black px-2 py-0.5 bg-indigo-600 text-white rounded-md shadow-sm animate-pulse">
+                                            저상
+                                          </span>
+                                        )}
+                                        {s.predictTime ? (
+                                          <span className="text-[10px] font-black px-2 py-0.5 bg-red-500 text-white rounded-md shadow-sm">
+                                            {s.predictTime}분 후 도착
+                                          </span>
+                                        ) : (
+                                          <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md">
+                                            운행 정보 없음
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  <div className="flex flex-col gap-2 p-3 bg-slate-50/50 rounded-xl border border-slate-100/80">
+                                    <div className="flex items-start gap-3">
+                                      <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-1 border-2 border-white shadow-sm ring-2 ring-blue-100"></div>
+                                      <span className="text-xs text-slate-700 leading-tight">
+                                        <strong className="text-slate-900 font-extrabold">{s.startName}</strong> 승차
+                                      </span>
+                                    </div>
+                                    <div className="w-0.5 h-3 bg-slate-200 ml-[4px]"></div>
+                                    <div className="flex items-start gap-3">
+                                      <div className="w-2.5 h-2.5 rounded-full bg-red-500 mt-1 border-2 border-white shadow-sm ring-2 ring-red-100"></div>
+                                      <span className="text-xs text-slate-700 leading-tight">
+                                        <strong className="text-slate-900 font-extrabold">{s.endName}</strong> 하차
+                                      </span>
+                                    </div>
+                                  </div>
+                                  
+                                  <p className="mt-2 text-[11px] text-slate-400 font-bold px-1 italic">
+                                    {s.summary}
+                                  </p>
+                                </div>
+                              </>
+                            )}
                           </div>
                         ))}
-                        <p className="text-[10px] text-gray-400 text-center mt-2 font-medium">* 위 시간은 대중교통 평균 고정값 기준입니다.</p>
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
